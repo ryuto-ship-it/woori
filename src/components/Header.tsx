@@ -1,11 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import wooriLogo from '../assets/woori-logo.png';
+import { useCart } from '../context/CartContext';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { totalCount } = useCart();
 
   const isCampaignActive = location.pathname.startsWith('/campaign');
 
@@ -16,7 +18,7 @@ export default function Header() {
           <img src={wooriLogo} alt="WOORI" className="logo-mark" />
           <span className="logo-text">WOORI<span className="x-accent">.</span>Foundation</span>
         </Link>
-        
+
         <nav className="desktop-nav">
           <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>홈</Link>
           <Link to="/campaign/premiere-staking" className={`nav-link ${isCampaignActive ? 'active' : ''}`}>캠페인</Link>
@@ -25,6 +27,11 @@ export default function Header() {
           <a href="#" className="nav-link">생태계</a>
           <a href="#" className="nav-link">거버넌스</a>
         </nav>
+
+        <Link to="/shop/cart" className="header-cart-btn" aria-label="장바구니">
+          <ShoppingCart size={20} />
+          {totalCount > 0 && <span className="header-cart-badge">{totalCount}</span>}
+        </Link>
 
         <button className="mobile-menu-btn" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <X size={24} /> : <Menu size={24} />}

@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Star, ShoppingCart } from 'lucide-react';
 import '../Shop.css';
 import { useWallet } from '../hooks/useWallet';
 import { useShop } from '../context/ShopContext';
 import type { ProductCategory } from '../context/ShopContext';
+import { useCart } from '../context/CartContext';
+import { getProductDecoration, getMockReviews } from '../utils/mockProductDecoration';
 import wooriLogo from '../assets/woori-logo.png';
 
 const CATEGORY_LABEL: Record<ProductCategory, string> = {
@@ -27,6 +29,7 @@ export default function ShopDetailPage() {
   const navigate = useNavigate();
   const { wallet, connectWallet } = useWallet();
   const { products } = useShop();
+  const { addToCart } = useCart();
 
   const product = products.find(p => p.id === productId);
 
@@ -60,6 +63,12 @@ export default function ShopDetailPage() {
     'https://loremflickr.com/800/800/merch?random=33'
   ];
 
+  const { discountPercent, rating, reviewCount } = getProductDecoration(product.id);
+  const discountedPrice = discountPercent > 0
+    ? Math.round(product.priceWoori * (1 - discountPercent / 100))
+    : product.priceWoori;
+  const reviews = getMockReviews(product.id);
+
   const handleBuyClick = () => {
     if (!wallet.connected) {
       connectWallet();
@@ -73,7 +82,7 @@ export default function ShopDetailPage() {
   };
 
   const confirmPurchase = () => {
-    if (wooriBalance < product.priceWoori) return;
+    if (wooriBalance < discountedPrice) return;
     setPurchaseStage('processing');
     setTimeout(() => {
       setOrderId(genMockOrderId());
@@ -113,8 +122,19 @@ export default function ShopDetailPage() {
           <h1>{product.name}</h1>
           <p className="detail-desc">{product.description}</p>
           
+          <div className="product-rating" style={{ marginBottom: '10px' }}>
+            <Star size={13} fill="currentColor" /> {rating}
+            <span className="product-review-count">리뷰 {reviewCount}개</span>
+          </div>
+
           <div className="detail-price-box">
-            <h2><img src={wooriLogo} alt="WOORI" style={{width:'24px', height:'24px'}} /> {product.priceWoori.toLocaleString()} WOORI</h2>
+            {discountPercent > 0 && (
+              <div className="detail-discount-row">
+                <span className="badge badge-discount">{discountPercent}% OFF</span>
+                <span className="product-price-original">{product.priceWoori.toLocaleString()} WOORI</span>
+              </div>
+            )}
+            <h2><img src={wooriLogo} alt="WOORI" style={{width:'24px', height:'24px'}} /> {discountedPrice.toLocaleString()} WOORI</h2>
             <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '16px'}}>
               잔여 수량: {product.stock === null ? '무제한 (디지털)' : `${product.stock}개`}
             </div>
@@ -137,35 +157,35 @@ export default function ShopDetailPage() {
             )}
 
             {purchaseStage === 'idle' && (
-              <button className="btn-primary btn-block" style={{padding: '16px', fontSize: '1.1rem'}} onClick={handleBuyClick}>
-                WOORI로 구매하기
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="ghost-btn-outline" style={{ flex: '0 0 auto', padding: '0 18px' }} onClick={() => addToCart(product.id)}>
+                  <ShoppingCart size={16} />
+                </button>
+                <button className="btn-primary btn-block" style={{padding: '16px', fontSize: '1.1rem'}} onClick={handleBuyClick}>
+                  WOORI로 구매하기
+                </button>
+              </div>
             )}
 
             {purchaseStage === 'confirming' && (
-              <div className="confirm-box" style={{background: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px'}}>
-                {wooriBalance < product.priceWoori ? (
-                  <div style={{color: '#e74c3c', textAlign: 'center'}}>
-                    WOORI가 부족합니다. (현재: {wooriBalance} / 필요: {product.priceWoori})
-                    <button className="ghost-btn-outline btn-block mt-3" onClick={() => setPurchaseStage('idle')}>취소</button>
+              wooriBalance < discountedPrice ? (
+                <div className="insufficient-box">
+                  WOORI가 부족합니다 (현재: {wooriBalance} / 필요: {discountedPrice})
+                  <button className="ghost-btn-outline btn-block mt-3" onClick={() => setPurchaseStage('idle')}>취소</button>
+                </div>
+              ) : (
+                <div className="confirm-box">
+                  <p className="text-sm text-muted">{discountedPrice.toLocaleString()} WOORI로 결제하시겠습니까?</p>
+                  <div className="confirm-actions">
+                    <button className="btn-primary" onClick={confirmPurchase}>결제 확정</button>
+                    <button className="ghost-btn-outline" onClick={() => setPurchaseStage('idle')}>취소</button>
                   </div>
-                ) : (
-                  <div style={{textAlign: 'center'}}>
-                    <p style={{marginBottom: '16px'}}>정말 구매하시겠습니까?</p>
-                    <div style={{display: 'flex', gap: '12px'}}>
-                      <button className="btn-primary" style={{flex: 1}} onClick={confirmPurchase}>결제 확정</button>
-                      <button className="ghost-btn-outline" style={{flex: 1}} onClick={() => setPurchaseStage('idle')}>취소</button>
-                    </div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )
             )}
 
             {purchaseStage === 'processing' && (
-              <div style={{textAlign: 'center', padding: '20px', color: 'var(--primary-color)'}}>
-                <div className="shop-loading-spinner" style={{display: 'inline-block', margin: '0 auto 12px'}}></div>
-                <p>결제 처리 중입니다...</p>
-              </div>
+              <div className="shop-loading"><span className="shop-loading-spinner" />결제 처리 중입니다...</div>
             )}
 
             {purchaseStage === 'done' && (
@@ -180,9 +200,29 @@ export default function ShopDetailPage() {
         </div>
       </div>
 
+      <div className="review-section">
+        <h3>구매 후기 ({reviews.length})</h3>
+        <div className="review-list">
+          {reviews.map((review, i) => (
+            <div key={i} className="review-item">
+              <div className="review-meta">
+                <span className="addr-mono">{review.author}</span>
+                <span className="review-stars">
+                  {Array.from({ length: 5 }, (_, s) => (
+                    <Star key={s} size={13} fill={s < review.rating ? 'currentColor' : 'none'} />
+                  ))}
+                </span>
+                <span className="comment-time">{review.date}</span>
+              </div>
+              <p className="review-text">{review.text}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {relatedProducts.length > 0 && (
         <div className="related-products">
-          <h3>이런 상품은 어떠세요?</h3>
+          <h3>함께 구매하면 좋은 상품</h3>
           <div className="shop-grid" style={{gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))'}}>
             {relatedProducts.map(rel => (
               <div key={rel.id} className="product-card" onClick={() => navigate(`/shop/${rel.id}`)}>

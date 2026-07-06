@@ -4,6 +4,7 @@ import { Wallet, Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Flame,
 import '../Community.css';
 import { useWallet, shortenAddress } from '../hooks/useWallet';
 import { useCommunity } from '../context/CommunityContext';
+import { getPlaceholderImage } from '../config/placeholderImages';
 import wooriLogo from '../assets/woori-logo.png';
 
 // TODO: swap these Unsplash placeholders for licensed real campaign/artist imagery once available.
@@ -82,6 +83,17 @@ export default function CommunityPage() {
     navigate(`/community/${postId}`);
   };
 
+  const top5Posts = [...posts].sort((a, b) => b.likeCount - a.likeCount).slice(0, 5);
+
+  const topContributors = Object.entries(
+    posts.reduce<Record<string, number>>((acc, p) => {
+      acc[p.walletAddress] = (acc[p.walletAddress] ?? 0) + 1;
+      return acc;
+    }, {}),
+  )
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
   const handleWriteSubmit = () => {
     if (!wallet.connected || !writeText.trim()) return;
     
@@ -144,6 +156,26 @@ export default function CommunityPage() {
         )}
       </div>
 
+      <div className="community-layout">
+        <aside className="community-sidebar">
+          <div className="sidebar-banner" style={{ backgroundImage: `url(${getPlaceholderImage('concert', 0, 400, 520)})` }}>
+            <span className="sidebar-banner-ad">AD</span>
+          </div>
+          <div className="sidebar-widget">
+            <h4 className="sidebar-widget-title">이번 달 인기글 TOP 5</h4>
+            <ol className="community-rank-list">
+              {top5Posts.map((post, i) => (
+                <li key={post.id} className="community-rank-item" onClick={() => handlePostClick(post.id)}>
+                  <span className="community-rank-num">{i + 1}</span>
+                  <span className="community-rank-title">{post.content.length > 22 ? post.content.slice(0, 22) + '...' : post.content}</span>
+                  <span className="community-rank-likes">♥ {post.likeCount}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </aside>
+
+        <div className="community-main">
       {/* Promo banner carousel */}
       <div className="community-banner">
         <span className="banner-ad-label">PROMOTION</span>
@@ -262,6 +294,26 @@ export default function CommunityPage() {
           )}
         </tbody>
       </table>
+        </div>
+
+        <aside className="community-sidebar">
+          <div className="sidebar-banner" style={{ backgroundImage: `url(${getPlaceholderImage('concert', 1, 400, 520)})` }}>
+            <span className="sidebar-banner-ad">AD</span>
+          </div>
+          <div className="sidebar-widget">
+            <h4 className="sidebar-widget-title">커뮤니티 랭킹</h4>
+            <ol className="community-rank-list">
+              {topContributors.map(([addr, count], i) => (
+                <li key={addr} className="community-rank-item">
+                  <span className="community-rank-num">{i + 1}</span>
+                  <span className="community-rank-title">{shortenAddress(addr)}</span>
+                  <span className="community-rank-likes">{count}개</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </aside>
+      </div>
       </div>
 
       <button className="fab-write-btn" onClick={openComposer} aria-label="글쓰기">
