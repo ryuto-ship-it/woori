@@ -1,10 +1,23 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Image as ImageIcon, Video, X } from 'lucide-react';
+import { Wallet, Image as ImageIcon, Video, X, ChevronLeft, ChevronRight, Flame, Edit3 } from 'lucide-react';
 import '../Community.css';
 import { useWallet, shortenAddress } from '../hooks/useWallet';
 import { useCommunity } from '../context/CommunityContext';
 import wooriLogo from '../assets/woori-logo.png';
+
+// TODO: swap these Unsplash placeholders for licensed real campaign/artist imagery once available.
+const COMMUNITY_BANNER_SLIDES = [
+  { id: 1, image: 'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1600&h=500&fit=crop&q=80' },
+  { id: 2, image: 'https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=1600&h=500&fit=crop&q=80' },
+  { id: 3, image: 'https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=1600&h=500&fit=crop&q=80' },
+];
+
+// NOTE: tag filtering is UI-only for now (posts don't carry tag data yet) —
+// wire this up to real hashtags once posts support them.
+const TRENDING_TAGS = ['#응원법', '#콘서트후기', '#직캠', '#시사회후기', '#굿즈추천', '#크루즈현장'];
+
+const HOT_LIKE_THRESHOLD = 10;
 
 export function formatRelativeTime(iso: string) {
   const date = new Date(iso);
@@ -33,6 +46,21 @@ export default function CommunityPage() {
   const [filterTab, setFilterTab] = useState<TabType>('all');
   const [sortTab, setSortTab] = useState<SortType>('latest');
   const [isWriteModalOpen, setIsWriteModalOpen] = useState(false);
+
+  const [bannerIndex, setBannerIndex] = useState(0);
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setBannerIndex(i => (i + 1) % COMMUNITY_BANNER_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const prevSlide = () => setBannerIndex(i => (i - 1 + COMMUNITY_BANNER_SLIDES.length) % COMMUNITY_BANNER_SLIDES.length);
+  const nextSlide = () => setBannerIndex(i => (i + 1) % COMMUNITY_BANNER_SLIDES.length);
+
+  const openComposer = () => (wallet.connected ? setIsWriteModalOpen(true) : connectWallet());
 
   // Write Modal State
   const [writeText, setWriteText] = useState('');
@@ -95,6 +123,10 @@ export default function CommunityPage() {
 
   return (
     <div className="community-page">
+      <div className="page-blob page-blob-1" />
+      <div className="page-blob page-blob-2" />
+
+      <div className="community-content-wrap">
       <div className="community-header">
         <div>
           <h1 className="page-title">커뮤니티</h1>
@@ -106,18 +138,67 @@ export default function CommunityPage() {
           </button>
         ) : (
           <button className="btn-primary" onClick={connectWallet}>
-            <Wallet size={15} style={{marginRight: '6px', verticalAlign: 'text-bottom'}} /> 
+            <Wallet size={15} style={{marginRight: '6px', verticalAlign: 'text-bottom'}} />
             지갑 연결
           </button>
         )}
       </div>
 
+      {/* Promo banner carousel */}
+      <div className="community-banner">
+        <span className="banner-ad-label">PROMOTION</span>
+        {COMMUNITY_BANNER_SLIDES.map((slide, i) => (
+          <div
+            key={slide.id}
+            className={`banner-slide ${i === bannerIndex ? 'banner-slide-active' : ''}`}
+            style={{ backgroundImage: `url(${slide.image})` }}
+          />
+        ))}
+        <div className="banner-overlay" />
+        <div className="banner-content">
+          <h2 className="banner-title">지금, 가장 뜨거운 순간을 함께</h2>
+          <p className="banner-subtitle">여러분의 이야기가 WOORI 커뮤니티를 채웁니다</p>
+        </div>
+        <button className="banner-arrow banner-arrow-left" onClick={prevSlide} aria-label="이전 배너">
+          <ChevronLeft size={20} />
+        </button>
+        <button className="banner-arrow banner-arrow-right" onClick={nextSlide} aria-label="다음 배너">
+          <ChevronRight size={20} />
+        </button>
+        <div className="banner-dots">
+          {COMMUNITY_BANNER_SLIDES.map((slide, i) => (
+            <button
+              key={slide.id}
+              className={`banner-dot ${i === bannerIndex ? 'banner-dot-active' : ''}`}
+              onClick={() => setBannerIndex(i)}
+              aria-label={`배너 ${i + 1}로 이동`}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Trending hashtags */}
+      <div className="trending-tags">
+        <span className="trending-label"><Flame size={13} /> 지금 뜨는 이야기</span>
+        <div className="trending-tag-scroll">
+          {TRENDING_TAGS.map(tag => (
+            <button
+              key={tag}
+              className={`trending-tag ${activeTag === tag ? 'trending-tag-active' : ''}`}
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+            >
+              {tag}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="community-filters">
         <div className="community-tabs">
           <button className={`tab ${filterTab === 'all' ? 'active' : ''}`} onClick={() => setFilterTab('all')}>전체</button>
-          <button className={`tab ${filterTab === 'image' ? 'active' : ''}`} onClick={() => setFilterTab('image')}>사진</button>
-          <button className={`tab ${filterTab === 'video' ? 'active' : ''}`} onClick={() => setFilterTab('video')}>영상</button>
-          <button className={`tab ${filterTab === 'text' ? 'active' : ''}`} onClick={() => setFilterTab('text')}>자유글</button>
+          <button className={`tab ${filterTab === 'image' ? 'active' : ''}`} onClick={() => setFilterTab('image')}>📷 사진</button>
+          <button className={`tab ${filterTab === 'video' ? 'active' : ''}`} onClick={() => setFilterTab('video')}>🎬 영상</button>
+          <button className={`tab ${filterTab === 'text' ? 'active' : ''}`} onClick={() => setFilterTab('text')}>💬 자유글</button>
         </div>
         <div className="community-tabs">
           <button className={`tab ${sortTab === 'latest' ? 'active' : ''}`} onClick={() => setSortTab('latest')}>최신순</button>
@@ -148,6 +229,7 @@ export default function CommunityPage() {
                 <td style={{color: '#888'}}>{postNum}</td>
                 <td className="col-title">
                   <div className="board-title-wrapper">
+                    {post.likeCount >= HOT_LIKE_THRESHOLD && <span className="hot-badge">HOT</span>}
                     <span className="board-title-text">{post.content.length > 50 ? post.content.substring(0, 50) + '...' : post.content}</span>
                     {post.comments.length > 0 && (
                       <span className="board-comment-count">[{post.comments.length}]</span>
@@ -180,6 +262,11 @@ export default function CommunityPage() {
           )}
         </tbody>
       </table>
+      </div>
+
+      <button className="fab-write-btn" onClick={openComposer} aria-label="글쓰기">
+        <Edit3 size={22} />
+      </button>
 
       {isWriteModalOpen && (
         <div className="write-modal-overlay" onClick={() => setIsWriteModalOpen(false)}>
