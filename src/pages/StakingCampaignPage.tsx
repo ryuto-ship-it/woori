@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef, type RefObject } from 'react'
+import { useState, useEffect, useRef, type RefObject, type ReactNode } from 'react'
 import {
   Wallet, Film, Star, CheckCircle, ListChecks, Stamp,
   Trophy, Zap, ChevronRight, ExternalLink,
   ShieldCheck, Gift, Search, Ticket, Bell, Send,
+  User, Mail, Phone, Lock, ChevronDown, XCircle,
 } from 'lucide-react'
 import '../Campaign.css'
 import {
@@ -20,7 +21,9 @@ type WalletState = {
   address: string
 }
 
-type StepState = 1 | 2 | 3 | 4
+type StepState = 1 | 2 | 3 | 4 | 5
+
+type InfoSubmitState = 'idle' | 'loading' | 'done'
 
 const FAQ_ITEMS: { q: string; a: string }[] = [
   {
@@ -124,14 +127,59 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   )
 }
 
+// Floating-label input used by the participant info step — shows a live
+// valid/invalid icon once the field has content, without nagging on an empty field.
+function FloatingField({
+  icon, label, value, onChange, valid, showError, errorMessage, inputMode, maxLength,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  onChange: (v: string) => void
+  valid: boolean
+  showError: boolean
+  errorMessage: string
+  inputMode?: 'text' | 'email' | 'tel'
+  maxLength?: number
+}) {
+  const hasValue = value.length > 0
+  return (
+    <div className={`float-field ${hasValue ? 'float-field-filled' : ''} ${showError ? 'float-field-error' : ''}`}>
+      <span className="float-field-icon">{icon}</span>
+      <input
+        className="float-field-input"
+        value={value}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        placeholder=" "
+        onChange={e => onChange(e.target.value)}
+      />
+      <label className="float-field-label">{label}</label>
+      <span className="float-field-status">
+        {hasValue && valid && <CheckCircle size={16} className="float-field-check" />}
+        {showError && <XCircle size={16} className="float-field-x" />}
+      </span>
+      {showError && <p className="float-field-error-msg">{errorMessage}</p>}
+    </div>
+  )
+}
+
 export default function StakingCampaignPage() {
   const [wallet, setWallet] = useState<WalletState>({ connected: false, address: '' })
   const [currentStep, setCurrentStep] = useState<StepState>(1)
   const [selectedOption, setSelectedOption] = useState<'snapshot' | 'dual' | null>(null)
-  
+
   // Entry states
   const [entryHash, setEntryHash] = useState<string | null>(null)
   const [tickets, setTickets] = useState(0)
+
+  // Participant info step (mock submission — no Supabase write here)
+  const [participantName, setParticipantName] = useState('')
+  const [participantEmail, setParticipantEmail] = useState('')
+  const [participantPhone, setParticipantPhone] = useState('')
+  const [consentChecked, setConsentChecked] = useState(false)
+  const [consentExpanded, setConsentExpanded] = useState(false)
+  const [infoSubmitState, setInfoSubmitState] = useState<InfoSubmitState>('idle')
 
   // KONET balance lookup — brief loading state + mock block number
   const [balanceLoading, setBalanceLoading] = useState(false)
@@ -153,8 +201,8 @@ export default function StakingCampaignPage() {
   const konetShortfall = Math.max(0, MIN_KONET_THRESHOLD - konet)
 
   const animatedWoori = useCountUp(wallet.connected && !balanceLoading ? MOCK_AVG_WOORI : 0)
-  const animatedParticipants = useCountUp(currentStep === 4 ? MOCK_TOTAL_PARTICIPANTS : 0, 1200)
-  const animatedRecords = useCountUp(currentStep === 4 ? MOCK_TOTAL_ONCHAIN_RECORDS : 0, 1200)
+  const animatedParticipants = useCountUp(currentStep === 5 ? MOCK_TOTAL_PARTICIPANTS : 0, 1200)
+  const animatedRecords = useCountUp(currentStep === 5 ? MOCK_TOTAL_ONCHAIN_RECORDS : 0, 1200)
 
   // Scroll-triggered fade-ins for the new landing-page sections
   const [trailerRef, trailerInView] = useInView<HTMLElement>()
@@ -206,7 +254,31 @@ export default function StakingCampaignPage() {
     const earnedTickets = selectedOption === 'dual' ? DUAL_HOLDER_TICKETS : BASE_TICKETS
     setTickets(earnedTickets)
     setEntryHash(genMockTxHash())
-    setCurrentStep(4)
+    setCurrentStep(5)
+  }
+
+  // Participant info validation — errors only surface once the field has content,
+  // so an untouched empty field doesn't show red on first render.
+  const isNameValid = participantName.trim().length >= 2
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participantEmail)
+  const isPhoneValid = /^01[016789]-\d{3,4}-\d{4}$/.test(participantPhone)
+  const isInfoFormValid = isNameValid && isEmailValid && isPhoneValid && consentChecked
+
+  const formatPhoneInput = (raw: string) => {
+    const digits = raw.replace(/\D/g, '').slice(0, 11)
+    if (digits.length < 4) return digits
+    if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`
+    return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+  }
+
+  // TODO: Insert participant info into Supabase (table: participants) — mock only for now.
+  const submitParticipantInfo = () => {
+    if (!isInfoFormValid || infoSubmitState !== 'idle') return
+    setInfoSubmitState('loading')
+    setTimeout(() => {
+      setInfoSubmitState('done')
+      setTimeout(() => setCurrentStep(4), 500)
+    }, 800)
   }
 
   return (
@@ -552,16 +624,116 @@ export default function StakingCampaignPage() {
             )}
           </div>
 
-          {/* STEP 3: Execution */}
+          {/* STEP 3: Participant Info */}
           <div className={`step-card spacing-rhythm-sm ${currentStep === 3 ? 'active' : currentStep > 3 ? 'completed' : 'locked'}`}>
             <div className="step-header" onClick={() => currentStep > 3 && setCurrentStep(3)}>
               <div className="step-icon">
-                {currentStep > 3 ? <CheckCircle size={20} /> : <Stamp size={20} />}
+                {currentStep > 3 ? <CheckCircle size={20} /> : <User size={20} />}
+              </div>
+              <h3 className="step-title">참여자 정보 입력</h3>
+            </div>
+
+            {currentStep === 3 && (
+              <div className="step-body transition-slide-spring">
+                <div className="info-form-card">
+                  <div className="info-security-note">
+                    <Lock size={14} className="info-security-icon" />
+                    <span>안전하게 보호됩니다</span>
+                  </div>
+
+                  <FloatingField
+                    icon={<User size={16} />}
+                    label="이름"
+                    value={participantName}
+                    onChange={setParticipantName}
+                    valid={isNameValid}
+                    showError={participantName.length > 0 && !isNameValid}
+                    errorMessage="이름을 2자 이상 입력해주세요."
+                  />
+                  <FloatingField
+                    icon={<Mail size={16} />}
+                    label="이메일"
+                    value={participantEmail}
+                    onChange={setParticipantEmail}
+                    valid={isEmailValid}
+                    showError={participantEmail.length > 0 && !isEmailValid}
+                    errorMessage="올바른 이메일 형식이 아닙니다."
+                    inputMode="email"
+                  />
+                  <FloatingField
+                    icon={<Phone size={16} />}
+                    label="휴대폰번호"
+                    value={participantPhone}
+                    onChange={v => setParticipantPhone(formatPhoneInput(v))}
+                    valid={isPhoneValid}
+                    showError={participantPhone.length > 0 && !isPhoneValid}
+                    errorMessage="010-0000-0000 형식으로 입력해주세요."
+                    inputMode="tel"
+                    maxLength={13}
+                  />
+
+                  <div className="consent-row">
+                    <button
+                      type="button"
+                      role="checkbox"
+                      aria-checked={consentChecked}
+                      className={`consent-checkbox ${consentChecked ? 'consent-checkbox-checked' : ''}`}
+                      onClick={() => setConsentChecked(c => !c)}
+                    >
+                      <svg viewBox="0 0 16 16" className="consent-checkbox-svg">
+                        <path d="M3 8.5L6.5 12L13 4.5" />
+                      </svg>
+                    </button>
+                    <span className="consent-label">개인정보 수집 및 이용에 동의합니다 (필수)</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="consent-accordion-toggle"
+                    onClick={() => setConsentExpanded(e => !e)}
+                  >
+                    상세 내용 보기
+                    <ChevronDown size={14} className={`consent-accordion-chevron ${consentExpanded ? 'rotated' : ''}`} />
+                  </button>
+                  <div className={`consent-accordion-panel ${consentExpanded ? 'open' : ''}`}>
+                    <div className="consent-accordion-inner">
+                      <p className="consent-accordion-text">
+                        수집 항목: 이름, 이메일, 휴대폰번호. 수집 목적: 시사회 초청 안내 및 당첨자 발표.
+                        보유 기간: 캠페인 종료 후 즉시 파기됩니다. 동의를 거부하실 수 있으나,
+                        미동의 시 시사회 초청 안내를 받으실 수 없습니다.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn-primary btn-hover-effect btn-block info-submit-btn mt-4"
+                    disabled={!isInfoFormValid || infoSubmitState !== 'idle'}
+                    onClick={submitParticipantInfo}
+                  >
+                    {infoSubmitState === 'loading' ? (
+                      <span className="btn-spinner" />
+                    ) : infoSubmitState === 'done' ? (
+                      <CheckCircle size={18} />
+                    ) : (
+                      <>다음 단계로 <ChevronRight size={16} /></>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* STEP 4: Execution */}
+          <div className={`step-card spacing-rhythm-sm ${currentStep === 4 ? 'active' : currentStep > 4 ? 'completed' : 'locked'}`}>
+            <div className="step-header" onClick={() => currentStep > 4 && setCurrentStep(4)}>
+              <div className="step-icon">
+                {currentStep > 4 ? <CheckCircle size={20} /> : <Stamp size={20} />}
               </div>
               <h3 className="step-title">인증 및 실행</h3>
             </div>
 
-            {currentStep === 3 && (
+            {currentStep === 4 && (
               <div className="step-body transition-slide">
                 <div className="exec-box">
                   <Stamp size={32} className="text-purple mb-2" />
@@ -574,8 +746,8 @@ export default function StakingCampaignPage() {
             )}
           </div>
 
-          {/* STEP 4: Complete */}
-          <div className={`step-card spacing-rhythm-sm ${currentStep === 4 ? 'active' : 'locked'}`}>
+          {/* STEP 5: Complete */}
+          <div className={`step-card spacing-rhythm-sm ${currentStep === 5 ? 'active' : 'locked'}`}>
             <div className="step-header">
               <div className="step-icon">
                 <CheckCircle size={20} className="text-gold" />
@@ -583,10 +755,10 @@ export default function StakingCampaignPage() {
               <h3 className="step-title">참여 완료</h3>
             </div>
 
-            {currentStep === 4 && (
+            {currentStep === 5 && (
               <div className="step-body transition-slide text-center">
                 <div className="complete-hero">
-                  <Trophy size={48} className="text-gold mb-3 mx-auto" style={{ margin: '0 auto' }} />
+                  <Trophy size={48} className="text-gold mb-3 mx-auto complete-check-bounce" style={{ margin: '0 auto' }} />
                   <h2>참여가 완료되었습니다!</h2>
                   <p className="final-tickets mt-2">최종 응모권: <strong>{tickets}장</strong></p>
                 </div>

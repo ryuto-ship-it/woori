@@ -61,6 +61,24 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Springier variant used only by the participant-info step entrance */
+.transition-slide-spring {
+  animation: slideFadeInSpring 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes slideFadeInSpring {
+  from { opacity: 0; transform: translateY(16px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.complete-check-bounce {
+  animation: completeCheckBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes completeCheckBounce {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+
 /* ── Hero & Cinematic Background (C5) ───────────────────────────────── */
 .cinematic-bg {
   background: radial-gradient(circle at 50% 30%, rgba(88, 28, 135, 0.35) 0%, rgba(0, 0, 0, 1) 70%);
@@ -1017,4 +1035,213 @@
   object-fit: contain;
   border-radius: 4px;
   opacity: 0.85;
+}
+
+/* ── Participant info step ────────────────────────────────────────────── */
+.info-form-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 22px;
+  transition: box-shadow 0.3s ease;
+}
+.info-form-card:focus-within {
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+
+.info-security-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 22px;
+}
+.info-security-icon {
+  color: var(--green);
+  animation: securityPulse 2s ease-in-out infinite;
+}
+@keyframes securityPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: .6; transform: scale(1.12); }
+}
+
+/* Floating-label fields */
+.float-field {
+  position: relative;
+  margin-bottom: 24px;
+}
+.float-field-icon {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  transition: color .2s;
+  pointer-events: none;
+}
+.float-field-input {
+  width: 100%;
+  padding: 19px 40px 9px 42px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.float-field-input:focus { outline: none; }
+.float-field-label {
+  position: absolute;
+  left: 42px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: all .2s ease;
+}
+.float-field:focus-within .float-field-label,
+.float-field-filled .float-field-label {
+  top: 10px;
+  font-size: 10.5px;
+  color: var(--gold);
+  transform: translateY(0);
+}
+.float-field:focus-within .float-field-input {
+  border-color: var(--gold-border);
+  box-shadow: 0 0 0 3px var(--gold-dim);
+}
+.float-field:focus-within .float-field-icon { color: var(--gold); }
+
+.float-field-status {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+}
+.float-field-check { color: var(--green); animation: fieldFadeIn .25s ease; }
+.float-field-x { color: var(--red); animation: fieldFadeIn .25s ease; }
+@keyframes fieldFadeIn {
+  from { opacity: 0; transform: scale(.7); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.float-field-error .float-field-input { border-color: rgba(239, 68, 68, .45); }
+.float-field-error-msg {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--red);
+  animation: errorSlideUp .2s ease;
+}
+@keyframes errorSlideUp {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Custom checkbox with a drawn-checkmark animation */
+.consent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+.consent-checkbox {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  border-radius: 5px;
+  border: 1.5px solid rgba(255, 255, 255, .18);
+  background: rgba(255, 255, 255, .03);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background .15s ease, border-color .15s ease;
+}
+.consent-checkbox-checked {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.consent-checkbox-svg {
+  width: 13px; height: 13px;
+  fill: none;
+  stroke: #000;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.consent-checkbox-svg path {
+  stroke-dasharray: 22;
+  stroke-dashoffset: 22;
+  transition: stroke-dashoffset .15s ease;
+}
+.consent-checkbox-checked .consent-checkbox-svg path { stroke-dashoffset: 0; }
+.consent-label { font-size: 12.5px; color: var(--text-muted); }
+
+/* Accordion using the grid-template-rows trick for a true auto-height animation */
+.consent-accordion-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  color: var(--purple-light);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 18px;
+}
+.consent-accordion-chevron { transition: transform .2s ease; }
+.consent-accordion-chevron.rotated { transform: rotate(180deg); }
+.consent-accordion-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .3s ease;
+  margin-bottom: 4px;
+}
+.consent-accordion-panel.open { grid-template-rows: 1fr; }
+.consent-accordion-inner { overflow: hidden; min-height: 0; }
+.consent-accordion-text {
+  padding-top: 4px;
+  padding-bottom: 14px;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+/* Submit button micro-interaction */
+.info-submit-btn { transition: background .3s ease, color .3s ease, opacity .3s ease; }
+.info-submit-btn:disabled {
+  background: rgba(255, 255, 255, .06);
+  color: var(--text-dim);
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 0, 0, .25);
+  border-top-color: #000;
+  animation: btnSpin .6s linear infinite;
+}
+@keyframes btnSpin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .transition-slide-spring,
+  .complete-check-bounce,
+  .info-security-icon,
+  .float-field-check,
+  .float-field-x,
+  .float-field-error-msg,
+  .consent-checkbox-svg path,
+  .btn-spinner,
+  .float-field-label,
+  .float-field-input,
+  .info-form-card {
+    animation: none !important;
+    transition: none !important;
+  }
 }
