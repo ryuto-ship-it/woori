@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, type RefObject, type ReactNode } from 'react'
+import { useState, useEffect, useRef, type RefObject, type ReactNode, type MouseEvent } from 'react'
 import {
   Wallet, Film, Star, CheckCircle, ListChecks, Stamp,
   Trophy, Zap, ChevronRight, ExternalLink,
   ShieldCheck, Gift, Search, Ticket, Bell, Send,
   User, Mail, Phone, Lock, ChevronDown, XCircle,
+  Play, X,
 } from 'lucide-react'
 import '../Campaign.css'
 import {
@@ -161,6 +162,113 @@ function FloatingField({
       </span>
       {showError && <p className="float-field-error-msg">{errorMessage}</p>}
     </div>
+  )
+}
+
+// Sample NFT premiere-pass preview shown beside the wizard — purely illustrative,
+// no real mint/transfer happens here. Tilts toward the cursor and expands into a
+// modal with the trailer embed on click.
+function SampleNftTicket() {
+  const [tilt, setTilt] = useState('perspective(800px) rotateX(0deg) rotateY(0deg)')
+  const [expanded, setExpanded] = useState(false)
+  const [videoStarted, setVideoStarted] = useState(false)
+
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width - 0.5
+    const y = (e.clientY - rect.top) / rect.height - 0.5
+    setTilt(`perspective(800px) rotateX(${(-y * 10).toFixed(1)}deg) rotateY(${(x * 10).toFixed(1)}deg) scale3d(1.02,1.02,1.02)`)
+  }
+  const resetTilt = () => setTilt('perspective(800px) rotateX(0deg) rotateY(0deg)')
+
+  const closeTicket = () => {
+    setExpanded(false)
+    setVideoStarted(false)
+  }
+
+  return (
+    <>
+      <div
+        className="nft-ticket-wrap"
+        style={{ transform: tilt }}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={resetTilt}
+        onClick={() => setExpanded(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && setExpanded(true)}
+      >
+      <div className="nft-ticket">
+        <span className="nft-ticket-sample-badge">SAMPLE</span>
+
+        <div className="nft-ticket-header">
+          <div className="nft-ticket-brand">
+            {/* TODO: replace with the official WOORI Foundation logo mark once available */}
+            <img src={wooriFooterLogo} alt="WOORI" className="nft-ticket-brand-logo" />
+            <span className="nft-ticket-title">OK MADAM 2<br />PREMIERE PASS</span>
+          </div>
+          <span className="nft-ticket-konet-badge">
+            <img src={konetLogo} alt="KONET" /> KONET
+          </span>
+        </div>
+
+        <div className="nft-ticket-art">
+          <span className="nft-ticket-art-text">8월 7일<br />시사회 초청</span>
+          <span className="nft-ticket-play-hint"><Play size={18} fill="currentColor" /></span>
+        </div>
+
+        <div className="nft-ticket-footer">
+          <div className="nft-ticket-info-row">
+            <span className="nft-ticket-info-label">TOKEN ID</span>
+            <span className="nft-ticket-info-value">#0001</span>
+          </div>
+          <div className="nft-ticket-info-row">
+            <span className="nft-ticket-info-label">TO</span>
+            <span className="nft-ticket-info-value addr-mono">0x1A2b...9A0b</span>
+          </div>
+          <div className="nft-ticket-info-row">
+            <span className="nft-ticket-info-label">BLOCK</span>
+            <span className="nft-ticket-info-value">#1,284,392</span>
+          </div>
+          <div className="nft-ticket-qr" aria-hidden="true">
+            <div className="nft-ticket-qr-grid">
+              {Array.from({ length: 25 }, (_, i) => (
+                <span key={i} className={i % 3 === 0 || i % 7 === 0 ? 'on' : ''} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {expanded && (
+        <div className="nft-ticket-modal-overlay" onClick={closeTicket}>
+          <div className="nft-ticket-modal" onClick={e => e.stopPropagation()}>
+            <button className="nft-ticket-modal-close" onClick={closeTicket} aria-label="닫기">
+              <X size={18} />
+            </button>
+            <div className="nft-ticket-modal-video">
+              {videoStarted ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${TRAILER_YOUTUBE_ID}?autoplay=1`}
+                  title="오케이 마담 2 공식 예고편"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : (
+                <button className="nft-ticket-play-btn" onClick={() => setVideoStarted(true)}>
+                  <span className="nft-ticket-play-circle"><Play size={24} fill="#000" /></span>
+                  <span>예고편 재생</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -486,7 +594,8 @@ export default function StakingCampaignPage() {
         </div>
       </section>
 
-      <div className="main wizard-container spacing-rhythm-lg" id="wizard">
+      <div className="main wizard-container wizard-with-ticket spacing-rhythm-lg" id="wizard">
+      <div className="wizard-layout">
         {/* ── Section 6: Journey Stepper ───────────────────────────── */}
         <div className="stepper">
           
@@ -790,6 +899,18 @@ export default function StakingCampaignPage() {
           </div>
 
         </div>
+
+        <aside className="wizard-side">
+          <div className="wizard-side-sticky">
+            <h3 className="section-heading">당첨 시 이런 티켓을 받으세요</h3>
+            <p className="wizard-side-desc">
+              실제 당첨자에게는 이 형태의 NFT 초청권이 지갑으로 자동 발송됩니다.
+              카드를 클릭해 미리 확인해보세요.
+            </p>
+            <SampleNftTicket />
+          </div>
+        </aside>
+      </div>
       </div>
 
       {/* ── Section 7: Trust Indicators / Live Stats ──────────────────── */}

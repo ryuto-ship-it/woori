@@ -1245,3 +1245,300 @@
     transition: none !important;
   }
 }
+
+/* ── Wizard + sample-ticket side-by-side layout ──────────────────────── */
+@media (min-width: 1024px) {
+  .wizard-with-ticket { max-width: 1000px; }
+}
+
+.wizard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+}
+@media (min-width: 1024px) {
+  .wizard-layout {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+  .wizard-layout .stepper { flex: 1; min-width: 0; }
+  .wizard-side { flex: 0 0 300px; }
+  .wizard-side-sticky { position: sticky; top: 88px; }
+}
+
+.wizard-side-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 8px 0 22px;
+}
+
+/* ── Sample NFT ticket ────────────────────────────────────────────────── */
+.nft-ticket-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+  margin: 0 auto;
+  padding: 2px;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .15s ease-out, box-shadow .3s ease;
+  will-change: transform;
+}
+.nft-ticket-wrap:hover {
+  box-shadow: 0 0 40px rgba(212, 175, 55, .35), 0 0 70px rgba(124, 58, 237, .2);
+}
+.nft-ticket-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 220%; height: 220%;
+  background: conic-gradient(
+    var(--gold) 0deg, var(--purple-light) 90deg,
+    var(--gold) 180deg, var(--purple-light) 270deg, var(--gold) 360deg
+  );
+  transform: translate(-50%, -50%);
+  animation: nftBorderSpin 5s linear infinite;
+}
+
+.nft-ticket {
+  position: relative;
+  z-index: 1;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #14101f 0%, #0d1017 55%, #170f22 100%);
+  overflow: hidden;
+  padding: 18px;
+}
+/* Holographic sheen sweep */
+.nft-ticket::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.14) 50%, transparent 60%);
+  background-size: 220% 220%;
+  animation: nftSheenSweep 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes nftSheenSweep {
+  0% { background-position: 120% 0%; }
+  100% { background-position: -20% 0%; }
+}
+@keyframes nftBorderSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+.nft-ticket-sample-badge {
+  position: absolute;
+  top: 10px; right: 10px;
+  z-index: 2;
+  background: rgba(0, 0, 0, .55);
+  border: 1px solid rgba(255, 255, 255, .25);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  padding: 3px 9px;
+  border-radius: 100px;
+  backdrop-filter: blur(3px);
+}
+
+.nft-ticket-header {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.nft-ticket-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nft-ticket-brand-logo { width: 22px; height: 22px; object-fit: contain; border-radius: 4px; }
+.nft-ticket-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .03em;
+  line-height: 1.3;
+  color: #fff;
+}
+.nft-ticket-konet-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--purple-dim);
+  border: 1px solid var(--purple-border);
+  color: var(--purple-light);
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 100px;
+  flex-shrink: 0;
+}
+.nft-ticket-konet-badge img { width: 11px; height: 11px; object-fit: contain; }
+
+.nft-ticket-art {
+  position: relative;
+  z-index: 1;
+  height: 130px;
+  border-radius: 12px;
+  margin-bottom: 14px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(212,175,55,.35), transparent 55%),
+    radial-gradient(circle at 75% 75%, rgba(124,58,237,.45), transparent 55%),
+    linear-gradient(135deg, #1a1024 0%, #0a0a12 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.nft-ticket-art-text {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  text-align: center;
+  line-height: 1.4;
+  text-shadow: 0 2px 10px rgba(0,0,0,.5);
+}
+.nft-ticket-play-hint {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  backdrop-filter: blur(3px);
+  border: 1px solid rgba(255,255,255,.3);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nft-ticket-footer { position: relative; z-index: 1; }
+.nft-ticket-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px dashed rgba(255,255,255,.08);
+  font-size: 11px;
+}
+.nft-ticket-info-label {
+  color: var(--text-dim);
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+.nft-ticket-info-value { color: #fff; font-weight: 600; }
+
+.nft-ticket-qr {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+.nft-ticket-qr-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 6px);
+  grid-template-rows: repeat(5, 6px);
+  gap: 2px;
+  padding: 8px;
+  background: #fff;
+  border-radius: 4px;
+}
+.nft-ticket-qr-grid span { background: #fff; }
+.nft-ticket-qr-grid span.on { background: #0a0a12; }
+
+/* ── Ticket click-to-play modal ───────────────────────────────────────── */
+.nft-ticket-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 300;
+}
+.nft-ticket-modal {
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  background: #0d1017;
+  border: 1px solid var(--purple-border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 0 60px rgba(124,58,237,.25);
+  animation: nftModalPop .4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes nftModalPop {
+  from { opacity: 0; transform: scale(.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+.nft-ticket-modal-close {
+  position: absolute;
+  top: -14px; right: -14px;
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.4);
+}
+.nft-ticket-modal-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.nft-ticket-modal-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.nft-ticket-play-btn {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: linear-gradient(160deg, rgba(124,58,237,.25) 0%, rgba(0,0,0,.6) 100%);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nft-ticket-play-circle {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease;
+}
+.nft-ticket-play-btn:hover .nft-ticket-play-circle { transform: scale(1.08); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nft-ticket-wrap,
+  .nft-ticket-wrap::before,
+  .nft-ticket::after,
+  .nft-ticket-modal {
+    animation: none !important;
+    transition: none !important;
+  }
+}
